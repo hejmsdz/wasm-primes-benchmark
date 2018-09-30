@@ -7,21 +7,76 @@
   </head>
   <body>
     <main id="main">
-      <button id="find-primes" disabled>Let's find some primes!</button>
-      <ul id="primes-list"></ul>
-      <footer id="benchmark"></footer>
+      <canvas id="chart" width="800" height="400"></canvas>
+      <footer id="status"></footer>
     </main>
 
-    <script src="js/base_primes.js"></script>
-    <script src="js/wasm_primes.js"></script>
-    <script src="js/js_primes.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
     <script>
 (() => {
-  new WasmPrimes(
-    document.getElementById('find-primes'),
-    document.getElementById('primes-list'),
-    document.getElementById('benchmark')
-  ).initialize();
+  const implementations = ['js', 'js_typed', 'wasm'];
+  const lengths = [100, 200, 500, 1000, 2000];
+  let testsLeft = 0;
+  const colors = ['#DDA448', '#BB342F', '#6153CC'];
+  const chart = new Chart('chart', {
+    type: 'line',
+    data: {
+      datasets: implementations.map((label, i) => ({
+        label,
+        data: [],
+        borderColor: colors[i],
+        backgroundColor: 'transparent'
+      }))
+    },
+    options: {
+      scales: {
+        xAxes: [{type: 'linear', position: 'bottom', scaleLabel: {display: true, labelString: 'number of primes to find'}}],
+        yAxes: [{scaleLabel: {display: true, labelString: 'execution time [ms]'}}]
+      }
+    }
+  });
+  const status = document.getElementById('status');
+  const worker = new Worker('js/worker.js');
+
+  const showStatus = () => {
+    let msg;
+    if (testsLeft == 0) {
+      msg = 'All done!';
+      let wasmData = getDataset('wasm');
+      let jsData = getDataset('js');
+      let wasmTime = wasmData[wasmData.length - 1].y;
+      let jsTime = jsData[jsData.length - 1].y;
+      let percentDiff = ((jsTime - wasmTime) / jsTime * 100).toFixed(1);
+      msg += `\nIn the last example WebAssembly was faster than JS by ${percentDiff}%!`;
+    } else {
+      let s = testsLeft > 1 ? 's' : '';
+      msg = `${testsLeft} test${s} remaining...`;
+    }
+    status.innerHTML = msg;
+  }
+
+  const getDataset = (implementation) => {
+    const datasetIndex = implementations.indexOf(implementation);
+    return chart.data.datasets[datasetIndex].data;
+  }
+
+  worker.onmessage = ({data}) => {
+    let dataset = getDataset(data.implementation);
+    dataset.push({x: data.length, y: data.result});
+    dataset.sort((a, b) => a.x - b.x);
+    chart.update();
+    testsLeft--;
+    showStatus();
+  }
+
+  lengths.forEach(length => {
+    implementations.forEach((implementation, i) => {
+      worker.postMessage({implementation, length});
+      testsLeft++;
+    });
+  });
+  
+  showStatus();
 })();
     </script>
   </body>

@@ -1,6 +1,6 @@
-class JsPrimes extends BasePrimes {
+class JsTypedPrimes extends BasePrimes {
   initialize() {
-    this.primes = [];
+    this.primes = new Int32Array(this.length);
     this.enableButton();
   }
 
@@ -18,7 +18,7 @@ class JsPrimes extends BasePrimes {
     let primesFound = 0;
     while (primesFound < this.length) {
       if (this.isPrime(testedNumber)) {
-        this.primes.push(testedNumber);
+        this.primes[primesFound] = testedNumber;
         primesFound++;
       }
       testedNumber++;
