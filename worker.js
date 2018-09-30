@@ -1,4 +1,4 @@
-importScripts('base_primes.js', 'js_primes.js', 'js_typed_primes.js', 'wasm_primes.js');
+importScripts('js/base_primes.js', 'js/js_primes.js', 'js/js_typed_primes.js', 'js/wasm_primes.js');
 
 const implementations = {
   'js': JsPrimes,

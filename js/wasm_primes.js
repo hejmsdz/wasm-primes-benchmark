@@ -1,7 +1,7 @@
 class WasmPrimes extends BasePrimes {
   initialize() {
     const imports = {};
-    fetch('/primes.wasm')
+    fetch('primes.wasm')
       .then(response => response.arrayBuffer())
       .then(bytes => WebAssembly.instantiate(bytes, imports))
       .then(this.onModuleLoaded.bind(this));
